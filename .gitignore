@@ -1,3 +1,6 @@
 # created by virtualenv automatically
 *.sqlite
 data/
+models/
+spatial/
+*.json
