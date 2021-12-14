@@ -2,13 +2,13 @@
 
 # Post-Hurricane Structure Damage Assessment Leveraging Aerial Imagery and Convolutional Neural Networks
 
-This project is an effort to automate structure damage assessments based on post-hurricane aerial imagery. A labelled training dataset of images of structures from the Houston area just after Hurricane Harvey was acquired from the University of Washington Disaster Data Science Lab. Several neural network architectures were trained and evaluated, from basic architectures to transfer learning models with pretrained weights. Models were trained on Google Public Cloud virtual machines leveraging multiple GPUs to enable fast and efficient iteration. **The final model achieves an accuracy of 0.9775 on test data**. This model could be used by local, state, and federal natural disaster responders to quickly develop damage assessment maps based on a single fly-over by imaging aircraft after a hurricane.</p>
+This project is an effort to automate structure damage assessments based on post-hurricane aerial imagery. A labelled training dataset of images of structures from the Houston area just after Hurricane Harvey was acquired from the University of Washington Disaster Data Science Lab. Several neural network architectures were trained and evaluated, from basic architectures to deep networks via transfer learning. Models were trained on Google Public Cloud virtual machines leveraging multiple GPUs to enable fast and efficient iteration. **The final model achieves an accuracy of 0.9775 on test data**. This model could be used by local, state, and federal natural disaster responders to quickly develop damage assessment maps based on a single fly-over by imaging aircraft after a hurricane.</p>
 
 View the [presentation](https://github.com/allankapoor/hurricane_damage/blob/master/PRESENTATION.pdf), full [report](https://github.com/allankapoor/hurricane_damage/blob/master/REPORT.pdf), or check out the summary below.</p>
 
 <h2>Why Post-Hurricane Damage Assessment?</h2>
 
-Natural disasters, especially hurricanes and extreme storms, cause widespread destruction and loss of life and cost the U.S billions of dollars each year. Effective response after a natural disaster strikes is critical to reducing harm and facilitating long term recovery but manual damage assessments are time and resource intensive. A model that can perform automated damage assessment based on remote sensing imagery quickly captured by a few planes flying over a disaster site would greatly reduce the effort and increase speed in which useful data (location and extent of damaged structures) could be put in the hands of responders.</p>
+Natural disasters, especially hurricanes and extreme storms, cause widespread destruction and loss of life and cost the U.S billions of dollars each year. Effective response after a natural disaster strikes is critical to reducing harm and facilitating long term recovery but manual damage assessments are time and resource intensive. A model that can perform automated damage assessment based on remote sensing imagery quickly captured by a few planes flying over a disaster zone would greatly reduce the effort and increase speed in which useful data (location and extent of damaged structures) could be put in the hands of responders.</p>
 
 <h1> Project Summary </h1>
 
@@ -34,7 +34,7 @@ The images are color, in RGB format. The figure below compares 3 randomly select
 
 <h3> Summary Images </h3>
 
-In classification problems based on structured (tabular) data, it is common to explore summary statistics for each feature (column). For this image classification problem I used the numeric RGB color values in the images to calculate summary statistics by pixel (feature) and then plot them visually. By plotting visual summaries of the two classes differences can be identified between them that could inform decisions about neural network architecture.  </p>
+In classification problems based on structured (tabular) data, it is common to explore summary statistics for each feature (column). For this image classification problem I used the numeric RGB color values in the images to calculate summary statistics by pixel (feature) and then plot them visually. By plotting visual summaries of the two classes, differences can be identified between them that could inform decisions about neural network architecture.  </p>
 
 <h4> Mean Value by Class </h4>
 
@@ -57,11 +57,13 @@ I investigated the geographic distribution of the training data by class. This i
  
 We can see that the training data appears to come from 3 distinct areas. In one area, all structures in the training dataset are damaged, while in the other two there is a mix. Within those two there are clear spatial patterns of where flooding/damage occurred and where it didn't. </p>
 
+This is not surprising given that the hurricane (and flooding) impacted areas differently based on topography, urban form, etc. However, it does also indicate that the examples from each class often come from entirely different areas. There is a danger that when training the neural networks models, they may learn to identify differences that are more to due with differences in appearance of structures between those areas, rather than differences that are actually due to hurricane damage. </p>
+
 <h2>Modeling</h2>
 
-This section describes the general approach used to train and iterate on neural network models. </p>
- * Tensorflow + Keras API
- * Training on Googler Cloud VM: 8 vCPUs (30 GB RAM) + 1 NVIDIA T4 GPU (16 GB)
+This section describes the general approach used to train and iterate on neural network models: </p>
+ * Platform: Tensorflow + Keras API
+ * Training on Google Cloud VM: 8 vCPUs (30 GB RAM) + 1 NVIDIA T4 GPU (16 GB)
  * Convolutional neural networks assumed to be best approach given image classification problem
  * Training for 50 epochs with early stopping if model does not improve after 10 epochs
  * **Evaluation metric: accuracy** (training/validation/test datasets are balanced)
@@ -79,14 +81,16 @@ I first created a simple baseline model with three convolution layers, three den
 
 The baseline model trained on data with no image augmentation achieved a validation accuracy of 0.94650. When the pipeline was updated to include image augmentation, validation accuracy increased to 0.95650. </p>
 
+This was surprisingly good performance for such a simple model, suggesting that there are clear differences between the damage and no damage classes that are relatively easy for the network to learn. However, there was still substantial room for improvement.  </p>
+
 <h3>Model Improvement and Refinement</h3>
 
 <h4>Reducing Overfitting</h4>
 
 During training of the baseline model, training validation scores regularly exceeded 0.99, while the validation accuracy was substantially lower. This suggested that the model was overfitting, even with variation in training data introduced by the image augmentation. To address this, I added:</p>
 
-* **Max pooling layers** downsample the outputs of the convolution layers by sliding a filter of the outputs and calculating the maximum pixel value within each window. This reduces the sensitivity of the model to exactly where features are located in an input image. Max pooling layers were added before the activation functions as this reduces the number of features that the activation function has to work on, increasing computational efficiency. 
-* **Dropout layers** have the effect of making the training process noisy, forcing nodes within a layer to probabilistically take on more or less responsibility for the inputs - reducing the chances that the model will overfit to noise in the training data. 
+* **Max pooling layers** which downsample the outputs of the convolution layers by sliding a filter of the outputs and calculating the maximum pixel value within each window. This reduces the sensitivity of the model to exactly where features are located in an input image. Max pooling layers were added before the activation functions as this reduces the number of features that the activation function has to work on, increasing computational efficiency. 
+* **Dropout layers** which have the effect of making the training process noisy, forcing nodes within a layer to probabilistically take on more or less responsibility for the inputs - reducing the chances that the model will overfit to noise in the training data. 
 
 <h4>Improving Convergence</h4>
 
@@ -94,7 +98,7 @@ While most of the models performed relatively well, a recurring issue was that m
 
 ![no_converge](https://github.com/allankapoor/hurricane_damage/blob/master/readme_images/no_converge.png)
 
-Model convergence was ultimately improved by a combination of several updates to the model architecture:</p>
+Model convergence was ultimately achieved through a combination of several updates to the model architecture:</p>
  * Reduction in kernel size and stride for the first convolution layer
  * Reduction in number of filters in first convolution layer
  * Reduction in number of nodes in each dense layer by 50%
@@ -135,9 +139,9 @@ Several combinations of hyperparameters were tested including smaller and larger
 
 <h3>Deep Network Leveraging Transfer Learning</h3>
 
-After training and evaluating the models described above, I next leveraged transfer learning to find out if pre-trained deep learning models could produce better and/or more stable results. Out of the many deep learning models available I decided to use Resnet50 because: </p>
- 1) it offers a good balance of accuracy and training efficiency
- 2) it was used in the baseline model for the xView2 competition, which suggested that it would perform well for a similar aerial imagery classification task.
+After training and evaluating the models described above, I next leveraged transfer learning to find out if pre-trained deep learning models could produce better and/or more stable results. Out of the many deep learning models available I decided to use Resnet50 because it: </p>
+ 1) Offers a good balance of accuracy and training efficiency
+ 2) Was used in the baseline model for the xView2 competition, which suggested that it would perform well for a similar aerial imagery classification task.
 
 Starting with the same hyperparameter settings for the convolution and dense layers as the best performing model from the previous section, several iterations based on different combinations of convolution filters size, dense layer node density, dropout rate, and learning rate were tested. The best performing deep network achieved a **validation accuracy of 0.9765**, slightly better than the standard convolutional network.</p>
 
@@ -188,8 +192,8 @@ Some final thoughts on potential improvements and how the model could be used go
 Training data improvements:</p>
 * More labelled data - a larger validation set would enable more rigorous tuning
 * Imagery from after floods have subsided - would enable train a model that can detect structure damage only, rather than presence of flood water
-* Imagery from neighborhoods with mixed impacts - would ensure that the model is not learning to idnetify other differences between flooded/unflooded neighborhoods such as urban form, density, etc.
-* Imagery from different cities - would ensure that the 
+* Imagery from neighborhoods with mixed impacts - would ensure that the model is not learning to identify other differences between flooded/unflooded neighborhoods tother than damage such as urban form, density, etc.
+* Imagery from different cities - would ensure that the model works for situations where the urban form is substantially different than Houston (i.e., dense urban areas)</p>
 Modeling improvements:</p>
 * Cross validation - would reduce chance that model evaluation/comparison si not impacted by the images in a particular validation set.
 * Hyperparameter optimization - would ensure that best vlaues for various hyperparemters are selected, but would require much more computation time.
